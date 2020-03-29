@@ -1,0 +1,69 @@
+---
+title: "Exploring titanic dataset in R"
+output: html_notebook
+---
+## Variable definitions
+from https://www.kaggle.com/c/titanic/data
+
+| Variable	| Definition	| Key
+| --- | --- | --- |
+| survival	| Survival	| 0 = No, 1 = Yes|
+| pclass	| Ticket class	| 1 = 1st, 2 = 2nd, 3 = 3rd|
+| sex	| Sex	| |
+|Age	| Age in years	| |
+|sibsp	|# of siblings / spouses aboard the Titanic	| |
+|parch	|# of parents / children aboard the Titanic	| |
+|ticket	|Ticket number	| |
+|fare	|Passenger fare	| |
+|cabin	|Cabin number	| |
+|embarked |	Port of Embarkation |	C = Cherbourg, Q = Queenstown, S = Southampton|
+
+```{r installing libraries, message=FALSE, warning=FALSE}
+library(ggplot2)
+library(ggExtra)
+library(ggthemes)
+library(scales)
+library(dplyr)
+
+theme_set(theme_clean())
+```
+
+```{r read dataset, message=FALSE, warning=FALSE}
+train <- read.csv('train.csv')
+test <- read.csv('test.csv')
+
+combined <- bind_rows(train, test)
+```
+
+```{r}
+colnames(train)
+```
+
+```{r}
+summary(train)
+```
+Seems like Age has a bunch of missing values :/ We can impute them later.
+
+*TODO*: Impute age from other variables;
+
+Assuming that older folks, kids and women were prioritized for lifeboats and had a higher chance of survival. Let's see if this is true.
+
+### Compute group survival rates by some categorical vars:
+  - sex
+  - age group
+  - passenger class
+
+Instead of looking at age (which is continuous variable), we should look at range of age i:e bin it.
+
+So we will create a new variable called AgeBin which will contain age range.
+```{r}
+train$AgeBin = cut(train$Age, breaks = c(seq(10, 100, 10)))
+```
+Let's look at the survival rate distribution now.
+
+Dropping NA values for now and sorting groups by survival rate.
+```{r}
+survival <- train %>% select(AgeBin, Sex, Pclass, Survived) %>% group_by(AgeBin, Sex, Pclass) %>% summarise(Mean = mean(Survived)) %>% filter(!is.na(AgeBin)) %>% arrange(desc(Mean))
+
+survival
+```
